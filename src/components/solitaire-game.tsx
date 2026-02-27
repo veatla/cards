@@ -1,5 +1,5 @@
-import { useCallback, useContext, useEffect, useState } from 'react';
-import { Texture } from 'pixi.js';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { Rectangle, Texture } from 'pixi.js';
 import { loadCardsSheet } from '../assets/cards-assets';
 import {
   getDeckOfCardsTileTexture,
@@ -23,6 +23,7 @@ import {
   FIRST_COLUMN_X,
   FIRST_FOUNDATION_X,
   FOUNDATION_Y,
+  getColumnOverlap,
   SOLITAIRE_CARD_SCALE,
   STOCK_X,
   TABLE_HEIGHT,
@@ -35,10 +36,16 @@ import {
 const DECK_TILE_ROW = 0;
 const DECK_TILE_COL = 0;
 
+/** Hit area карты (центр 0,0, anchor 0.5) */
+const CARD_HIT_RECT = new Rectangle(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H);
+
 export function SolitaireGame() {
   const canvasRef = useContext(CanvasRefContext);
   const [sheetTexture, setSheetTexture] = useState<Texture | null>(null);
   const [deckTexture, setDeckTexture] = useState<Texture | null>(null);
+
+  const doubleClickRef = useRef<{ cardId: string; time: number } | null>(null);
+  const DOUBLE_CLICK_MS = 400;
 
   const {
     columns,
@@ -52,6 +59,7 @@ export function SolitaireGame() {
     setDragPosition,
     dropAt,
     cancelDrag,
+    moveCardToFoundation,
   } = useSolitaireStore();
 
   useEffect(() => {
@@ -64,6 +72,20 @@ export function SolitaireGame() {
       cancelled = true;
     };
   }, []);
+
+  const totalInFoundations =
+    foundations[0].length +
+    foundations[1].length +
+    foundations[2].length +
+    foundations[3].length;
+  const isWin = totalInFoundations === 52; // 4 масти × 13 карт
+
+  useEffect(() => {
+    if (isWin) {
+      const t = setTimeout(() => alert('Поздравляем! Вы собрали все карты в свободные ячейки.'), 100);
+      return () => clearTimeout(t);
+    }
+  }, [isWin]);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,6 +118,10 @@ export function SolitaireGame() {
     };
 
     const onUp = (e: PointerEvent) => {
+      const canvas = canvasRef.getCanvasElement?.();
+      if (canvas && typeof canvas.releasePointerCapture === 'function') {
+        canvas.releasePointerCapture(e.pointerId);
+      }
       const rect = canvasRef.getCanvasRect();
       if (!rect) {
         cancelDrag();
@@ -107,11 +133,11 @@ export function SolitaireGame() {
       window.removeEventListener('pointerup', onUp);
     };
 
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointermove', onMove, { capture: true });
+    window.addEventListener('pointerup', onUp, { capture: true });
     return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointermove', onMove, { capture: true });
+      window.removeEventListener('pointerup', onUp, { capture: true });
     };
   }, [dragging, canvasRef, setDragPosition, dropAt, cancelDrag]);
 
@@ -120,12 +146,68 @@ export function SolitaireGame() {
   }, [draw]);
 
   const handleCardPointerDown = useCallback(
-    (card: SolitaireCard, source: DragSource, globalX: number, globalY: number) => {
+    (
+      card: SolitaireCard,
+      source: DragSource,
+      globalX: number,
+      globalY: number,
+      pointerId: number
+    ) => {
       if (!canStartDragCard(card, source, useSolitaireStore.getState())) return;
       setDragPosition(globalX, globalY);
       startDrag(card, source);
+      const canvas = canvasRef?.getCanvasElement?.();
+      if (canvas && typeof canvas.setPointerCapture === 'function') {
+        canvas.setPointerCapture(pointerId);
+      }
     },
-    [startDrag, setDragPosition]
+    [startDrag, setDragPosition, canvasRef]
+  );
+
+  /** Клик по карте в колонке: двойной — в свободную ячейку (по масти), иначе — начало перетаскивания */
+  const handleColumnCardPointerDown = useCallback(
+    (
+      card: SolitaireCard,
+      col: number,
+      fromIndex: number,
+      globalX: number,
+      globalY: number,
+      pointerId: number
+    ) => {
+      const source: DragSource = { type: 'column', col, fromIndex };
+      if (!canStartDragCard(card, source, useSolitaireStore.getState())) return;
+      const now = Date.now();
+      const prev = doubleClickRef.current;
+      if (prev?.cardId === card.id && now - prev.time < DOUBLE_CLICK_MS) {
+        doubleClickRef.current = null;
+        if (moveCardToFoundation(card, source)) return;
+      }
+      doubleClickRef.current = { cardId: card.id, time: now };
+      setDragPosition(globalX, globalY);
+      startDrag(card, source);
+      const canvas = canvasRef?.getCanvasElement?.();
+      if (canvas && typeof canvas.setPointerCapture === 'function') {
+        canvas.setPointerCapture(pointerId);
+      }
+    },
+    [startDrag, setDragPosition, canvasRef, moveCardToFoundation]
+  );
+
+  /** Клик по карте в сбросе: двойной — в свободную ячейку, иначе — начало перетаскивания */
+  const handleWasteCardPointerDown = useCallback(
+    (card: SolitaireCard, globalX: number, globalY: number, pointerId: number) => {
+      const source: DragSource = { type: 'waste' };
+      if (!canStartDragCard(card, source, useSolitaireStore.getState())) return;
+      const now = Date.now();
+      const prev = doubleClickRef.current;
+      if (prev?.cardId === card.id && now - prev.time < DOUBLE_CLICK_MS) {
+        doubleClickRef.current = null;
+        if (moveCardToFoundation(card, source)) return;
+      }
+      doubleClickRef.current = { cardId: card.id, time: now };
+      handleCardPointerDown(card, source, globalX, globalY, pointerId);
+    },
+    [handleCardPointerDown, moveCardToFoundation]
   );
 
   if (!sheetTexture) return null;
@@ -179,35 +261,42 @@ export function SolitaireGame() {
         )}
       </pixiContainer>
 
-      {/* Waste - top card draggable */}
+      {/* Waste - при перетаскивании верхняя карта скрыта (рисуется только у курсора) */}
       <pixiContainer x={WASTE_X} y={FOUNDATION_Y} eventMode="static">
-        {waste.slice(-3).map((card, i) => {
-          const isTop = i === waste.slice(-3).length - 1;
-          const canDrag = isTop && waste.length > 0 && waste[waste.length - 1].id === card.id;
-          return (
-            <pixiContainer
-              key={card.id}
-              x={i * WASTE_FAN_OFFSET}
-              y={0}
-              eventMode={canDrag ? 'static' : 'none'}
-              cursor={canDrag ? 'grab' : 'default'}
-              onPointerDown={
-                canDrag
-                  ? (e: { global: { x: number; y: number } }) =>
-                      handleCardPointerDown(card, { type: 'waste' }, e.global.x, e.global.y)
-                  : undefined
-              }
-            >
-              <CardTileSprite
-                frame={cardFrame(card)}
-                x={CARD_W / 2}
-                y={CARD_H / 2}
-                scale={SOLITAIRE_CARD_SCALE}
-                anchor={0.5}
-              />
-            </pixiContainer>
-          );
-        })}
+        {waste
+          .slice(-3)
+          .filter(
+            (card) =>
+              !(dragging?.source.type === 'waste' && dragging.cards[0].id === card.id)
+          )
+          .map((card, i, arr) => {
+            const isTop = i === arr.length - 1;
+            const canDrag =
+              isTop && waste.length > 0 && waste[waste.length - 1].id === card.id;
+            return (
+              <pixiContainer
+                key={card.id}
+                x={i * WASTE_FAN_OFFSET}
+                y={0}
+                eventMode={canDrag ? 'static' : 'none'}
+                cursor={canDrag ? 'grab' : 'default'}
+                onPointerDown={
+                  canDrag
+                    ? (e: { global: { x: number; y: number }; pointerId: number }) =>
+                        handleWasteCardPointerDown(card, e.global.x, e.global.y, e.pointerId)
+                    : undefined
+                }
+              >
+                <CardTileSprite
+                  frame={cardFrame(card)}
+                  x={CARD_W / 2}
+                  y={CARD_H / 2}
+                  scale={SOLITAIRE_CARD_SCALE}
+                  anchor={0.5}
+                />
+              </pixiContainer>
+            );
+          })}
       </pixiContainer>
 
       {/* Foundations - 4 свободные ячейки */}
@@ -240,32 +329,54 @@ export function SolitaireGame() {
         </pixiContainer>
       ))}
 
-      {/* Columns - draggable cards */}
-      {columns.map((column, col) => (
-        <pixiContainer
-          key={col}
-          x={FIRST_COLUMN_X + col * COLUMN_DX}
-          y={COLUMNS_TOP_Y}
-          eventMode="none"
-        >
-          {column.map((card, i) => {
-            const selectableStart = getSelectableRange(column);
-            const canDrag = i >= selectableStart && card.faceUp;
-            return (
-              <pixiContainer
-                key={card.id}
+      {/* Columns - пустой слот когда нет карт, иначе карты с динамическим overlap */}
+      {columns.map((column, col) => {
+        const overlap = getColumnOverlap(column.length);
+        return (
+          <pixiContainer
+            key={col}
+            x={FIRST_COLUMN_X + col * COLUMN_DX}
+            y={COLUMNS_TOP_Y}
+            eventMode="static"
+            interactiveChildren={true}
+          >
+            {column.length === 0 ? (
+              <pixiGraphics
                 x={CARD_W / 2}
-                y={i * COLUMN_OVERLAP_Y + CARD_H / 2}
+                y={CARD_H / 2}
+                draw={(g) => {
+                  g.clear();
+                  g.roundRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 4);
+                  g.stroke({ width: 2, color: 0x2d5a34 });
+                }}
+              />
+            ) : null}
+            {column.map((card, i) => {
+              const isDraggingThisCard =
+                dragging?.source.type === 'column' &&
+                dragging.source.col === col &&
+                i >= dragging.source.fromIndex;
+              if (isDraggingThisCard) return null;
+              const selectableStart = getSelectableRange(column);
+              const canDrag = i >= selectableStart && card.faceUp;
+              return (
+                <pixiContainer
+                  key={card.id}
+                  x={CARD_W / 2}
+                  y={i * overlap + CARD_H / 2}
                 eventMode={canDrag ? 'static' : 'none'}
                 cursor={canDrag ? 'grab' : 'default'}
+                hitArea={CARD_HIT_RECT}
                 onPointerDown={
                   canDrag
-                    ? (e: { global: { x: number; y: number } }) =>
-                        handleCardPointerDown(
+                    ? (e: { global: { x: number; y: number }; pointerId: number }) =>
+                        handleColumnCardPointerDown(
                           card,
-                          { type: 'column', col, fromIndex: i },
+                          col,
+                          i,
                           e.global.x,
-                          e.global.y
+                          e.global.y,
+                          e.pointerId
                         )
                     : undefined
                 }
@@ -281,10 +392,11 @@ export function SolitaireGame() {
               </pixiContainer>
             );
           })}
-        </pixiContainer>
-      ))}
+          </pixiContainer>
+        );
+      })}
 
-      {/* Dragged card - rendered on top */}
+      {/* Перетаскиваемая группа карт — стопка у курсора */}
       {dragging && (
         <pixiContainer
           x={dragPosition.x}
@@ -293,13 +405,16 @@ export function SolitaireGame() {
           eventMode="none"
           sortableChildren={false}
         >
-          <CardTileSprite
-            frame={cardFrame(dragging.card)}
-            x={0}
-            y={0}
-            scale={SOLITAIRE_CARD_SCALE}
-            anchor={0.5}
-          />
+          {dragging.cards.map((card, i) => (
+            <CardTileSprite
+              key={card.id}
+              frame={cardFrame(card)}
+              x={0}
+              y={i * COLUMN_OVERLAP_Y}
+              scale={SOLITAIRE_CARD_SCALE}
+              anchor={0.5}
+            />
+          ))}
         </pixiContainer>
       )}
     </pixiContainer>

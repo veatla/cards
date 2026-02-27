@@ -27,6 +27,15 @@ export const TABLE_WIDTH =
 
 const COLUMN_DROP_HEIGHT = TABLE_HEIGHT - COLUMNS_TOP_Y - TABLE_PADDING;
 
+/** Вертикальный шаг карт в колонке: сжимается, если колонка не помещается в поле */
+export function getColumnOverlap(columnLength: number): number {
+  if (columnLength <= 1) return COLUMN_OVERLAP_Y;
+  const available = COLUMN_DROP_HEIGHT - CARD_H;
+  const need = (columnLength - 1) * COLUMN_OVERLAP_Y;
+  if (need <= available) return COLUMN_OVERLAP_Y;
+  return available / (columnLength - 1);
+}
+
 /** Hit/drop zone: one column (full height, включает зазор справа) */
 export function getColumnBounds(col: number) {
   return {
