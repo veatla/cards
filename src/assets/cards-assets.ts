@@ -35,6 +35,9 @@ export async function loadCardsSheet(): Promise<Texture> {
     alias: CARDS_SPRITE_SHEET_ID,
     src: CARDS_SPRITE_SHEET_PATH,
   })) as Texture;
+  if (texture.source && 'scaleMode' in texture.source) {
+    (texture.source as { scaleMode: string }).scaleMode = 'nearest';
+  }
   sheetTexture = texture;
   return texture;
 }

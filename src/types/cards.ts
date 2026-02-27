@@ -1,9 +1,10 @@
 /** Suit order in sprite sheet: row index (row 0 = hearts, 1 = diamonds, 2 = clubs) */
-export const enum CardSuitRow {
-  Hearts = 0,
-  Diamonds = 1,
-  Clubs = 2,
-}
+export const CardSuitRow = {
+  Hearts: 0,
+  Diamonds: 1,
+  Clubs: 2,
+} as const;
+export type CardSuitRow = (typeof CardSuitRow)[keyof typeof CardSuitRow];
 
 /** Card backs row index in sprite sheet */
 export const CARD_BACKS_ROW = 3;

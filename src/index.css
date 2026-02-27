@@ -1,0 +1,120 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #1a1a2e;
+  color: #e8e8e8;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.page--home {
+  justify-content: flex-start;
+  padding-top: 2rem;
+}
+
+.page--solitaire {
+  padding: 1rem;
+}
+
+.page--loading {
+  align-items: center;
+  justify-content: center;
+}
+
+.loading {
+  font-size: 1.25rem;
+  color: #888;
+}
+
+.game-menu {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10;
+}
+
+.game-menu--overlay {
+  top: 0.5rem;
+  left: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.game-menu__title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.game-menu__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-menu__list li {
+  margin-bottom: 0.5rem;
+}
+
+.game-menu__link {
+  display: inline-block;
+  padding: 0.5rem 0.75rem;
+  color: #a8d4a8;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.game-menu__link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #c8f0c8;
+}
+
+.game-menu__link--current {
+  color: #888;
+  cursor: default;
+}
+
+.game-menu__btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  color: #1a4720;
+  background: #7cb87c;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.game-menu__btn:hover {
+  background: #8ed08e;
+}
+
+.page--solitaire canvas {
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}

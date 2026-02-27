@@ -12,7 +12,7 @@ export function BunnySprite() {
     const spriteRef = useRef(null)
 
     const [texture, setTexture] = useState(Texture.EMPTY)
-    const [isHovered, setIsHover] = useState(false)
+    const [, setIsHover] = useState(false)
     const [isActive, setIsActive] = useState(false)
 
     // Preload the sprite if it hasn't been loaded yet
