@@ -2,7 +2,8 @@
 export const CardSuitRow = {
   Hearts: 0,
   Diamonds: 1,
-  Clubs: 2,
+  Spades: 2,
+  Clubs: 3,
 } as const;
 export type CardSuitRow = (typeof CardSuitRow)[keyof typeof CardSuitRow];
 

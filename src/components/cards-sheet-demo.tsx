@@ -1,13 +1,13 @@
-import { Texture } from 'pixi.js';
-import { useEffect, useState } from 'react';
-import { getCardTileTexture, loadCardsSheet } from '../assets/cards-assets';
-import { CARDS_TILE_HEIGHT, CARDS_TILE_WIDTH } from '../constants';
-import { CARD_TILE_ORDER } from '../constants/card-layout';
-import type { TileFrame } from '../types/cards';
+import { Texture } from "pixi.js";
+import { useEffect, useState } from "react";
+import { getCardTileTexture, loadCardsSheet } from "../assets/cards-assets";
+import { CARDS_TILE_HEIGHT, CARDS_TILE_WIDTH } from "../constants";
+import { CARD_TILE_ORDER } from "../constants/card-layout";
+import type { TileFrame } from "../types/cards";
 
 const TILE_SCALE = 1;
-const SPACING_X = CARDS_TILE_WIDTH * TILE_SCALE + 4;
-const SPACING_Y = CARDS_TILE_HEIGHT * TILE_SCALE + 4;
+const SPACING_X = CARDS_TILE_WIDTH * TILE_SCALE + 5;
+const SPACING_Y = CARDS_TILE_HEIGHT * TILE_SCALE + 5;
 
 /** Group flat tile list by sprite sheet row for display */
 function groupByRow(): { frame: TileFrame; index: number }[][] {
@@ -24,8 +24,9 @@ function groupByRow(): { frame: TileFrame; index: number }[][] {
  * Renders all card tiles in layout order:
  * Row 1: Ace–King Hearts + 2 Jokers
  * Row 2: Ace–King Diamonds
- * Row 3: Ace–King Clubs
- * Row 4: 8 card backs
+ * Row 3: Ace–King Spades
+ * Row 4: Ace–King Clubs
+ * Row 5: 8 card backs
  */
 export function CardsSheetDemo() {
   const [textures, setTextures] = useState<Map<number, Texture>>(new Map());
@@ -65,7 +66,7 @@ export function CardsSheetDemo() {
               anchor={0}
             />
           );
-        })
+        }),
       )}
     </pixiContainer>
   );
