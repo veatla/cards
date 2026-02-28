@@ -1,6 +1,6 @@
-import { CardSuitRow, CARD_BACKS_ROW, CARD_BACK_DEFAULT } from '../types/cards';
-import type { CardRank } from '../types/cards';
-import type { SolitaireCard, SolitaireState } from './solitaire-types';
+import { CardSuitRow, CARD_BACKS_ROW, CARD_BACK_DEFAULT } from "../types/cards";
+import type { CardRank } from "../types/cards";
+import type { SolitaireCard, SolitaireState } from "./solitaire-types";
 
 let cardIdCounter = 0;
 function nextId(): string {
@@ -41,7 +41,7 @@ export function createInitialState(): SolitaireState {
   cardIdCounter = 0;
   const deck = shuffle(createDeck());
 
-  const columns: SolitaireState['columns'] = [[], [], [], [], [], [], []];
+  const columns: SolitaireState["columns"] = [[], [], [], [], [], [], []];
   let idx = 0;
   for (let col = 0; col < 7; col++) {
     for (let i = 0; i <= col; i++) {
@@ -69,24 +69,24 @@ export function cardFrame(card: SolitaireCard): { row: number; col: number } {
   return { row: card.suit, col: card.rank };
 }
 
-/** Can we put card on top of column (empty column accepts any card; else build down) */
-export function canPlaceOnColumn(
-  card: SolitaireCard,
-  column: SolitaireCard[]
-): boolean {
+/** Красная масть (Heart, Diamonds) — в колонке чередуем: красная только на чёрную и наоборот */
+function isRedSuit(suit: number): boolean {
+  return suit === CardSuitRow.Hearts || suit === CardSuitRow.Diamonds;
+}
+
+/** Can we put card on top of column (empty column accepts any card; else build down, чередуя цвет) */
+export function canPlaceOnColumn(card: SolitaireCard, column: SolitaireCard[]): boolean {
   if (column.length === 0) {
     return true;
   }
   const top = column[column.length - 1];
   if (!top.faceUp) return false;
+  if (isRedSuit(card.suit) === isRedSuit(top.suit) && card.suit !== top.suit) return false;
   return card.rank === top.rank - 1;
 }
 
 /** Can we put card on foundation (empty = A; else next of same suit) */
-export function canPlaceOnFoundation(
-  card: SolitaireCard,
-  foundation: SolitaireCard[]
-): boolean {
+export function canPlaceOnFoundation(card: SolitaireCard, foundation: SolitaireCard[]): boolean {
   if (foundation.length === 0) {
     return card.rank === 0;
   }
