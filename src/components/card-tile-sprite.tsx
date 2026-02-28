@@ -10,6 +10,10 @@ export interface CardTileSpriteProps {
   y?: number;
   scale?: number;
   anchor?: number | { x: number; y: number };
+  /** Opacity 0..1 (для placeholder) */
+  alpha?: number;
+  /** Tint (hex) для слияния с фоном */
+  tint?: number;
 }
 
 /**
@@ -22,6 +26,8 @@ export function CardTileSprite({
   y = 0,
   scale = 1,
   anchor = 0.5,
+  alpha,
+  tint,
 }: CardTileSpriteProps) {
   const [texture, setTexture] = useState<Texture | null>(null);
 
@@ -46,6 +52,8 @@ export function CardTileSprite({
       y={y}
       scale={scale}
       anchor={anchor}
+      alpha={alpha}
+      tint={tint}
     />
   );
 }

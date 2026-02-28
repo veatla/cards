@@ -68,13 +68,13 @@ export function cardFrame(card: SolitaireCard): { row: number; col: number } {
   return { row: card.suit, col: card.rank };
 }
 
-/** Can we put card on top of column (empty column accepts only K/rank 12; else build down) */
+/** Can we put card on top of column (empty column accepts any card; else build down) */
 export function canPlaceOnColumn(
   card: SolitaireCard,
   column: SolitaireCard[]
 ): boolean {
   if (column.length === 0) {
-    return card.rank === 12;
+    return true;
   }
   const top = column[column.length - 1];
   if (!top.faceUp) return false;

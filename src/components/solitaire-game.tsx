@@ -1,6 +1,6 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Rectangle, Texture } from 'pixi.js';
-import { loadCardsSheet } from '../assets/cards-assets';
+import { getCardTileTexture, loadCardsSheet } from '../assets/cards-assets';
 import {
   getDeckOfCardsTileTexture,
   loadDeckOfCardsSheet,
@@ -40,6 +40,12 @@ const DECK_TILE_COL = 0;
 /** Hit area карты (центр 0,0, anchor 0.5) */
 const CARD_HIT_RECT = new Rectangle(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H);
 
+/** Placeholder: рубашка с переливанием (alpha + tint под слой стола) */
+const PLACEHOLDER_TINT = 0x3d6a37;
+const PLACEHOLDER_ALPHA_BASE = 0.4;
+const PLACEHOLDER_ALPHA_AMP = 0.15;
+const PLACEHOLDER_SHIMMER_MS = 180;
+
 export function SolitaireGame() {
   const canvasRef = useContext(CanvasRefContext);
   const [sheetTexture, setSheetTexture] = useState<Texture | null>(null);
@@ -47,6 +53,15 @@ export function SolitaireGame() {
 
   const doubleClickRef = useRef<{ cardId: string; time: number } | null>(null);
   const DOUBLE_CLICK_MS = 400;
+  const [placeholderPhase, setPlaceholderPhase] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setPlaceholderPhase((p) => p + 1), PLACEHOLDER_SHIMMER_MS);
+    return () => clearInterval(id);
+  }, []);
+
+  const placeholderAlpha =
+    PLACEHOLDER_ALPHA_BASE + PLACEHOLDER_ALPHA_AMP * Math.sin(placeholderPhase * 0.25);
 
   const {
     columns,
@@ -224,12 +239,13 @@ export function SolitaireGame() {
         }}
       />
 
-      {/* Stock - колода (getFicheTexture) */}
+      {/* Stock — колода; пустая: placeholder + клик перебирает сброс обратно в колоду */}
       <pixiContainer
         x={STOCK_X}
         y={FOUNDATION_Y}
         eventMode="static"
         cursor="pointer"
+        hitArea={stock.length === 0 ? new Rectangle(0, 0, CARD_W, CARD_H) : undefined}
         onPointerDown={handleStockClick}
       >
         {stock.length > 0 && deckTexture ? (
@@ -250,14 +266,14 @@ export function SolitaireGame() {
             anchor={0.5}
           />
         ) : (
-          <pixiGraphics
-            draw={(g) => {
-              g.clear();
-              g.roundRect(0, 0, CARD_W, CARD_H, 4);
-              g.stroke({ width: 2, color: 0x444444 });
-            }}
-            x={0}
-            y={0}
+          <CardTileSprite
+            frame={{ row: CARD_BACKS_ROW, col: CARD_BACK_DEFAULT }}
+            x={CARD_W / 2}
+            y={CARD_H / 2}
+            scale={SOLITAIRE_CARD_SCALE}
+            anchor={0.5}
+            alpha={placeholderAlpha}
+            tint={PLACEHOLDER_TINT}
           />
         )}
       </pixiContainer>
@@ -300,35 +316,31 @@ export function SolitaireGame() {
           })}
       </pixiContainer>
 
-      {/* Foundations - 4 свободные ячейки */}
-      {[0, 1, 2, 3].map((fi) => (
-        <pixiContainer
-          key={fi}
-          x={FIRST_FOUNDATION_X + fi * COLUMN_DX}
-          y={FOUNDATION_Y}
-          eventMode="none"
-        >
-          {foundations[fi].length > 0 ? (
-            <CardTileSprite
-              frame={cardFrame(foundations[fi][foundations[fi].length - 1])}
+      {/* Foundations — 4 свободные ячейки; карты и placeholder через sheetTexture (всегда видны) */}
+      {[0, 1, 2, 3].map((fi) => {
+        const topCard = foundations[fi].length > 0 ? foundations[fi][foundations[fi].length - 1] : null;
+        const frame = topCard ? cardFrame(topCard) : { row: CARD_BACKS_ROW, col: CARD_BACK_DEFAULT };
+        const tex = getCardTileTexture(sheetTexture, frame);
+        return (
+          <pixiContainer
+            key={fi}
+            x={FIRST_FOUNDATION_X + fi * COLUMN_DX}
+            y={FOUNDATION_Y}
+            eventMode="none"
+            zIndex={10}
+          >
+            <pixiSprite
+              texture={tex}
               x={CARD_W / 2}
               y={CARD_H / 2}
               scale={SOLITAIRE_CARD_SCALE}
               anchor={0.5}
+              alpha={topCard ? 1 : placeholderAlpha}
+              tint={topCard ? 0xffffff : PLACEHOLDER_TINT}
             />
-          ) : (
-            <pixiGraphics
-              draw={(g) => {
-                g.clear();
-                g.roundRect(0, 0, CARD_W, CARD_H, 4);
-                g.stroke({ width: 2, color: 0x555555 });
-              }}
-              x={0}
-              y={0}
-            />
-          )}
-        </pixiContainer>
-      ))}
+          </pixiContainer>
+        );
+      })}
 
       {/* Columns - пустой слот когда нет карт, иначе карты с динамическим overlap */}
       {columns.map((column, col) => {
@@ -342,14 +354,14 @@ export function SolitaireGame() {
             interactiveChildren={true}
           >
             {column.length === 0 ? (
-              <pixiGraphics
+              <CardTileSprite
+                frame={{ row: CARD_BACKS_ROW, col: CARD_BACK_DEFAULT }}
                 x={CARD_W / 2}
                 y={CARD_H / 2}
-                draw={(g) => {
-                  g.clear();
-                  g.roundRect(-CARD_W / 2, -CARD_H / 2, CARD_W, CARD_H, 4);
-                  g.stroke({ width: 2, color: 0x2d5a34 });
-                }}
+                scale={SOLITAIRE_CARD_SCALE}
+                anchor={0.5}
+                alpha={placeholderAlpha}
+                tint={PLACEHOLDER_TINT}
               />
             ) : null}
             {column.map((card, i) => {

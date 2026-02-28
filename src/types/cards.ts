@@ -6,10 +6,10 @@ export const CardSuitRow = {
 } as const;
 export type CardSuitRow = (typeof CardSuitRow)[keyof typeof CardSuitRow];
 
-/** Card backs: row index in sprite sheet (row 5 = 8 разных стилей рубашек) */
+/** Card backs: row index in sprite sheet (row 4 = 8 разных стилей рубашек) */
 export const CARD_BACKS_ROW = 4;
 
-/** Колонки рубашек в cards.png (row 5): 8 стилей, можно менять под выбор пользователя */
+/** Колонки рубашек в cards.png (row 4): 8 стилей, можно менять под выбор пользователя */
 export const CARD_BACK_COL_0 = 0;
 export const CARD_BACK_COL_1 = 1;
 export const CARD_BACK_COL_2 = 2;
