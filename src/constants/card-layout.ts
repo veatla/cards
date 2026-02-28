@@ -3,7 +3,7 @@ import { CardSuitRow, CARD_BACKS_ROW, JOKER_COL_1, JOKER_COL_2 } from '../types/
 
 /**
  * Order of tiles as they appear in the sprite sheet.
- * Load order: row 1 (hearts + jokers) → row 2 (diamonds) → row 3 (clubs) → row 4 (8 backs).
+ * Row 5: 8 card back styles (CARD_BACKS_ROW, cols 0..7).
  */
 export const CARD_TILE_ORDER: TileFrame[] = [
   // Row 0: Ace Heart .. King Heart, Joker, Joker

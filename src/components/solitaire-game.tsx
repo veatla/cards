@@ -7,6 +7,7 @@ import {
 } from '../assets/deck-of-cards-assets';
 import { CardTileSprite } from './card-tile-sprite';
 import { CanvasRefContext } from '../contexts/canvas-ref';
+import { CARD_BACKS_ROW, CARD_BACK_DEFAULT } from '../types/cards';
 import { cardFrame, getSelectableRange } from '../game/solitaire-logic';
 import {
   canStartDragCard,
@@ -242,7 +243,7 @@ export function SolitaireGame() {
           />
         ) : stock.length > 0 ? (
           <CardTileSprite
-            frame={{ row: 3, col: 0 }}
+            frame={{ row: CARD_BACKS_ROW, col: CARD_BACK_DEFAULT }}
             x={CARD_W / 2}
             y={CARD_H / 2}
             scale={SOLITAIRE_CARD_SCALE}

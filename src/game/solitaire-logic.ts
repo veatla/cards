@@ -1,4 +1,4 @@
-import { CardSuitRow } from '../types/cards';
+import { CardSuitRow, CARD_BACKS_ROW, CARD_BACK_DEFAULT } from '../types/cards';
 import type { CardRank } from '../types/cards';
 import type { SolitaireCard, SolitaireState } from './solitaire-types';
 
@@ -63,7 +63,7 @@ export function createInitialState(): SolitaireState {
 
 export function cardFrame(card: SolitaireCard): { row: number; col: number } {
   if (!card.faceUp) {
-    return { row: 3, col: 0 };
+    return { row: CARD_BACKS_ROW, col: CARD_BACK_DEFAULT };
   }
   return { row: card.suit, col: card.rank };
 }

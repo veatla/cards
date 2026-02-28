@@ -6,8 +6,21 @@ export const CardSuitRow = {
 } as const;
 export type CardSuitRow = (typeof CardSuitRow)[keyof typeof CardSuitRow];
 
-/** Card backs row index in sprite sheet */
-export const CARD_BACKS_ROW = 3;
+/** Card backs: row index in sprite sheet (row 5 = 8 разных стилей рубашек) */
+export const CARD_BACKS_ROW = 4;
+
+/** Колонки рубашек в cards.png (row 5): 8 стилей, можно менять под выбор пользователя */
+export const CARD_BACK_COL_0 = 0;
+export const CARD_BACK_COL_1 = 1;
+export const CARD_BACK_COL_2 = 2;
+export const CARD_BACK_COL_3 = 3;
+export const CARD_BACK_COL_4 = 4;
+export const CARD_BACK_COL_5 = 5;
+export const CARD_BACK_COL_6 = 6;
+export const CARD_BACK_COL_7 = 7;
+
+/** Какую рубашку использовать по умолчанию (можно заменить на CARD_BACK_COL_1..7) */
+export const CARD_BACK_DEFAULT = CARD_BACK_COL_0;
 
 /** Ranks: column index in sprite sheet (0 = Ace, 12 = King) */
 export type CardRank = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
