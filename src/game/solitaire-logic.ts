@@ -12,6 +12,7 @@ function createDeck(): SolitaireCard[] {
   const suits: CardSuitRow[] = [
     CardSuitRow.Hearts,
     CardSuitRow.Diamonds,
+    CardSuitRow.Spades,
     CardSuitRow.Clubs,
   ];
   for (const suit of suits) {
